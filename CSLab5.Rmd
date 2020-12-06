@@ -1,0 +1,116 @@
+---
+title: "CS Lab45"
+author: "Suhani Ariga"
+date: "12/2/2020"
+output:
+  pdf_document: default
+  html_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+Library Setup
+```{r}
+library(readxl)
+library(ggplot2)
+library(boot)
+```
+
+## Assignment 2
+
+**1.** Plot the histogram of Price
+
+```{r}
+data = read_xls("prices1.xls")
+
+ggplot(data = data, aes(Price)) +
+  ggtitle("Histogram of Price") +
+  geom_histogram(bins = 30)
+```
+
+It reminds us of Gamma distribution as it is skewed towards the right.
+
+```{r}
+cat(paste("Mean price is:", mean(data$Price)))
+```
+
+**2.** Bootstrap
+
+Bias corrected mean estimate
+
+$$\hat{T} = 2T(D)-\frac{1}{B}\sum_{i=1}^{B}T(D_i^*) $$
+Variance
+
+$$ \hat{Var[T(.)]} = \frac{1}{B-1}\sum_{i=1}^B(T(D_i^*) - \overline{T(D^*)}\Big)^2 $$
+where $B$ is the number of bootstrap samples, $T(D_i^*)$ the statistic(mean) for each sample and $\overline{T(D^*})$ is the mean of all the values after using the statistic for each sample.
+```{r}
+boot_mean = function(data,index){
+  return(mean(data[index]))
+}
+
+set.seed(12345)
+boot_obj = boot(data$Price, boot_mean, R = 10000)
+
+plot(boot_obj)
+
+# bias correction estimator
+bias_cor = 2*mean(data$Price) - mean(boot_obj$t)
+cat(paste(" The bootstrap bias–correction is:", bias_cor))
+
+#variance of estimator
+var_est = sum((boot_obj$t-mean(data$Price))^2)/(nrow(boot_obj$t)-1)
+cat(paste("The variance of the mean price is :",var_est))
+
+# 95% confidence interval for the mean price using bootstrap percentile, bootstrap BCa, and first–order normal approximation
+
+CI = boot.ci(boot_obj,type = c("norm","perc", "bca"))
+CI
+```
+
+**3.** Jackknife
+
+Variance
+
+$$ \hat{Var[T(.)]} = \frac{1}{n(n-1)}\sum_{i=1}^n(T_i^* - {J(T)})^2 $$
+where,
+$$ T_i^* = nT(D) - (n-1)T(D_i^i),$$
+$$ J(T) = \frac{1}{n}\sum_{i=1}^{n}T_i^*$$
+   
+```{r}
+n = nrow(data)
+Ti = c()
+for (i in 1:n) {
+  Ti[i] = n*mean(data$Price) - (n-1)*mean(data$Price[-i])
+}
+
+J = (1/n) * sum(Ti)
+
+#  variance of the mean price 
+Var_jackknife = sum((Ti - J)^2)/(n*(n-1))
+cat(paste("Variance of the mean price is", Var_jackknife))
+```
+The variance of the mean price using the jackknife is 1320.911 and the variance of the mean price got from the bootstrap is 1295.855. The difference between the two estimates is 25.056, which is small. Considering the tendency that Jackknife overestimate variance, the difference seems reasonable.
+
+
+**4.** Compare the Confidence Intervals
+
+```{r}
+Normal = c(CI$normal[2], CI$normal[3], CI$normal[3] - CI$normal[2], ((CI$normal[3] + CI$normal[2])/2))
+Percentile = c(CI$percent[4], CI$percent[5], CI$percent[5] - CI$percent[4], ((CI$percent[5] + CI$percent[4])/2))
+BCa = c(CI$bca[4], CI$bca[5], CI$bca[5] - CI$bca[4], ((CI$bca[5] + CI$bca[4])/2))
+combine = rbind(Normal, Percentile, BCa)
+
+colnames(combine) = c("From", "To", "Length", "Mean")
+knitr::kable(combine, caption = "Compare the confidence intervals")
+```
+
+
+
+
+
+
+
+
+
