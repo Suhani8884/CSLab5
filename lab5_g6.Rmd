@@ -1,6 +1,6 @@
 ---
 title: "CS Lab5"
-author: "Shwetha Vandagadde, Suhani Ariga and Hoda Fakharzadeh"
+author: "Shwetha Vandagadde, Suhani Ariga and Hoda Fakharzadehjahromy"
 date: "12/2/2020"
 output:
   pdf_document: default
@@ -228,6 +228,7 @@ The plot of T-statics is skewed, which shows data random
 plot(seq_alpha, (1-temp2),ylim = 0:1,xlab = 'Power',ylab = 'alpha')
 ```
 we can see the power of T statics is high and it is perfectly capable of detecting the lack of randomness in the data.
+
 ## Assignment 2: Bootstrap, jackknife and confidence intervals
 
 **1.** Plot the histogram of Price
